@@ -1,7 +1,12 @@
 {
   "cSpell.enabled": false,
   "go.lintTool": "golangci-lint",
-  "go.generateTestsFlags": ["-template=testify"],
+  "go.generateTestsFlags": [
+    "-template=testify"
+  ],
   "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true
+  "files.trimFinalNewlines": true,
+  "go.testFlags": [
+    "-v"
+  ]
 }
