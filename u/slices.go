@@ -22,6 +22,13 @@ func Sum[T Addable](in []T) T {
 	}
 	return sum
 }
+func SumF[T any, U Addable](in []T, f func(T) U) U {
+	var sum U
+	for _, v := range in {
+		sum += f(v)
+	}
+	return sum
+}
 
 func Max[T constraints.Ordered](in []T) (T, int) {
 	if len(in) == 0 {
