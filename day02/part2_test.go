@@ -1,38 +1,37 @@
 package day02
 
 import (
-	"strings"
 	"testing"
 
-	"github.com/fastcat/aoc2022/u"
+	"github.com/fastcat/aoc2022/i"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPart2Sample(t *testing.T) {
 	r := require.New(t)
-	results := u.Map(parse2(sample), play2)
+	results := i.Map(parse2(sample), play2)
 	r.Equal(
 		[]round{
 			{Rock, Rock, Draw, 4},
 			{Paper, Rock, Loss, 1},
 			{Scissors, Rock, Win, 7},
 		},
-		results,
+		i.ToSlice(results),
 	)
-	total := u.SumF(results, func(r round) int { return r.score })
+	total := i.Sum(i.Map(results, func(r round) int { return r.score }))
 	r.Equal(12, total)
 }
 
 func TestPart2(t *testing.T) {
-	results := u.Map(parse2(input), play2)
-	total := u.SumF(results, func(r round) int { return r.score })
+	results := i.Map(parse2(input), play2)
+	total := i.Sum(i.Map(results, func(r round) int { return r.score }))
 	t.Log(total)
 }
 
-func parse2(in string) []round {
-	return u.Map(
-		strings.Split(strings.TrimRight(in, "\n"), "\n"),
-		func(l string) round {
+func parse2(in string) i.Iterable[round] {
+	return i.Map(
+		i.Split[rune](i.Runes(in), []rune{'\n'}),
+		func(l []rune) round {
 			return round{
 				them: parseRPS(rune(l[0])),
 				o:    parseOutcome(rune(l[2])),

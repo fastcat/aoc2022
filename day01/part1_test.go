@@ -1,11 +1,11 @@
 package day01
 
 import (
-	"bytes"
 	_ "embed"
 	"strconv"
 	"testing"
 
+	"github.com/fastcat/aoc2022/i"
 	"github.com/fastcat/aoc2022/u"
 	"github.com/stretchr/testify/require"
 )
@@ -27,37 +27,32 @@ func TestPart1Sample(t *testing.T) {
 			{7000, 8000, 9000},
 			{10000},
 		},
-		parsed,
+		i.ToSlice(parsed),
 	)
 	e := elves(parsed)
-	m, mi := u.Max(e)
+	m := i.Max(e)
 	r.Equal(24000, m)
-	r.Equal(3, mi)
+	// r.Equal(3, mi)
 }
 
 func TestPart1(t *testing.T) {
 	parsed := parse(input)
 	e := elves(parsed)
-	m, mi := u.Max(e)
-	t.Log(m, mi)
+	m := i.Max(e)
+	t.Log(m)
 }
 
-func parse(data []byte) [][]int {
-	return u.Map(
-		bytes.Split(data, []byte{'\n', '\n'}),
-		func(s []byte) []int {
-			return u.Map(
-				bytes.Split(bytes.TrimRight(s, "\n"), []byte{'\n'}),
-				func(l []byte) int {
-					v, err := strconv.Atoi(string(l))
-					u.PanicIf(err)
-					return v
-				},
-			)
-		},
-	)
+func parse(data []byte) i.Iterable[[]int] {
+	d := i.Slice(data)
+	spl := i.Split[byte](d, []byte{'\n', '\n'})
+	parsed := i.Map(spl, func(in []byte) []int {
+		lines := i.ToStrings(i.Split[byte](i.Slice(in), []byte{'\n'}))
+		ints := i.Map(lines, i.Muster(strconv.Atoi))
+		return i.ToSlice(ints)
+	})
+	return parsed
 }
 
-func elves(in [][]int) []int {
-	return u.Map(in, u.Sum[int])
+func elves(in i.Iterable[[]int]) i.Iterable[int] {
+	return i.Map(in, u.Sum[int])
 }

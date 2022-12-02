@@ -3,10 +3,9 @@ package day02
 import (
 	_ "embed"
 	"fmt"
-	"strings"
 	"testing"
 
-	"github.com/fastcat/aoc2022/u"
+	"github.com/fastcat/aoc2022/i"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,16 +34,16 @@ var sample string
 
 func TestPart1Sample(t *testing.T) {
 	r := require.New(t)
-	results := u.Map(parse1(sample), play1)
+	results := i.Map(parse1(sample), play1)
 	r.Equal(
 		[]round{
 			{Rock, Paper, Win, 8},
 			{Paper, Rock, Loss, 1},
 			{Scissors, Scissors, Draw, 6},
 		},
-		results,
+		i.ToSlice(results),
 	)
-	total := u.SumF(results, func(r round) int { return r.score })
+	total := i.Sum(i.Map(results, func(r round) int { return r.score }))
 	r.Equal(15, total)
 }
 
@@ -52,18 +51,23 @@ func TestPart1Sample(t *testing.T) {
 var input string
 
 func TestPart1(t *testing.T) {
-	results := u.Map(parse1(input), play1)
-	total := u.SumF(results, func(r round) int { return r.score })
+	results := i.Map(parse1(input), play1)
+	total := i.Sum(i.Map(results, func(r round) int { return r.score }))
 	t.Log(total)
 }
 
-func parse1(in string) [][2]RPS {
-	return u.Map(
-		strings.Split(strings.TrimRight(in, "\n"), "\n"),
-		func(l string) [2]RPS {
-			return [2]RPS{parseRPS(rune(l[0])), parseRPS(rune(l[2]))}
+func parse1(in string) i.Iterable[[2]RPS] {
+	lines := i.Split[rune](i.Runes(in), []rune{'\n'})
+	parsed := i.Map(
+		lines,
+		func(l []rune) [2]RPS {
+			if len(l) != 3 || l[1] != ' ' {
+				panic(fmt.Errorf("invalid line: %q", string(l)))
+			}
+			return [2]RPS{parseRPS(l[0]), parseRPS(l[2])}
 		},
 	)
+	return parsed
 }
 
 type round struct {
