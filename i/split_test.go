@@ -56,7 +56,7 @@ func TestSplit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := assert.New(t)
-			s := Split[byte](Slice([]byte(tt.input)), []byte(tt.separator))
+			s := Split(Slice([]byte(tt.input)), []byte(tt.separator))
 			it := s.Iterator()
 			// for loop overshoots  intentionally so that we check the return for an
 			// extra call to Next() after it was already done

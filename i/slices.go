@@ -7,7 +7,7 @@ import (
 
 type slice[T any] []T
 
-func Slice[T any](s []T) slice[T] {
+func Slice[T any](s []T) Iterable[T] {
 	return slice[T](s)
 }
 

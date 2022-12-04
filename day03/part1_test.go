@@ -12,7 +12,7 @@ import (
 //go:embed sample.txt
 var sample string
 
-func TestPart1(t *testing.T) {
+func TestPart1Sample(t *testing.T) {
 	a := assert.New(t)
 
 	a.Equal(27, priority('A'))
@@ -45,7 +45,7 @@ func TestPart1(t *testing.T) {
 //go:embed input.txt
 var input string
 
-func TestPart2(t *testing.T) {
+func TestPart1(t *testing.T) {
 	bags := parse(input)
 	dupes := i.Map(bags, findDupe)
 	result := int(i.Sum(dupes))
@@ -68,9 +68,13 @@ func findDupe(bag [2][]rune) int {
 	set1 := prioritySet(bag[0])
 	set2 := prioritySet(bag[1])
 	dupes := set1 & set2
+	return singleBit(dupes)
+}
+
+func singleBit(in int64) int {
 	ret := 0
 	for i := 1; i <= 52; i++ {
-		if dupes&(1<<i) != 0 {
+		if in&(1<<i) != 0 {
 			if ret != 0 {
 				panic(errors.New("two dupes"))
 			}
