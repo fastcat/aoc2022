@@ -18,6 +18,16 @@ func SortDesc[T constraints.Ordered](s []T) {
 
 }
 
+func Reverse[T any](s []T) {
+	if len(s) == 0 {
+		return
+	}
+	mid := len(s) / 2
+	for i := 0; i < mid; i++ {
+		s[i], s[len(s)-i-1] = s[len(s)-i-1], s[i]
+	}
+}
+
 type Addable interface {
 	constraints.Ordered | constraints.Complex
 }
