@@ -1,6 +1,11 @@
 package i
 
+import "errors"
+
 func Chunk[T any](in Iterable[T], size int) Iterable[[]T] {
+	if size < 1 {
+		panic(errors.New("invalid size"))
+	}
 	return chunk[T]{in, size}
 }
 

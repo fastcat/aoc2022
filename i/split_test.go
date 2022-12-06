@@ -58,20 +58,7 @@ func TestSplit(t *testing.T) {
 			a := assert.New(t)
 			s := Split(Slice([]byte(tt.input)), []byte(tt.separator))
 			it := s.Iterator()
-			// for loop overshoots  intentionally so that we check the return for an
-			// extra call to Next() after it was already done
-			for i := 0; i <= len(tt.expected)+1; i++ {
-				value, done := it.Next()
-				a.Equal(i >= len(tt.expected), done)
-				if done {
-					a.Nil(value)
-				} else {
-					a.NotNil(value)
-				}
-				if i < len(tt.expected) {
-					a.Equal(tt.expected[i], string(value))
-				}
-			}
+			AssertIterator(a, ToSlice(Map(Slice(tt.expected), func(s string) []byte { return []byte(s) })), it)
 		})
 	}
 }

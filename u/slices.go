@@ -15,7 +15,6 @@ func Sum[T Addable](in []T) T {
 
 func SortDesc[T constraints.Ordered](s []T) {
 	slices.SortFunc(s, func(a, b T) bool { return b < a })
-
 }
 
 func Reverse[T any](s []T) {
