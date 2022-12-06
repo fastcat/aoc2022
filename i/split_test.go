@@ -58,7 +58,7 @@ func TestSplit(t *testing.T) {
 			a := assert.New(t)
 			s := Split(Slice([]byte(tt.input)), []byte(tt.separator))
 			it := s.Iterator()
-			AssertIterator(a, ToSlice(Map(Slice(tt.expected), func(s string) []byte { return []byte(s) })), it)
+			AssertIterator(a, ToSlice(Map(Slice(tt.expected), func(s string, _ int) []byte { return []byte(s) })), it)
 		})
 	}
 }

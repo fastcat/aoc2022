@@ -43,7 +43,7 @@ func TestPart1Sample(t *testing.T) {
 		},
 		i.ToSlice(results),
 	)
-	total := i.Sum(i.Map(results, func(r round) int { return r.score }))
+	total := i.Sum(i.Map(results, func(r round, _ int) int { return r.score }))
 	r.Equal(15, total)
 }
 
@@ -52,7 +52,7 @@ var input string
 
 func TestPart1(t *testing.T) {
 	results := i.Map(parse1(input), play1)
-	total := i.Sum(i.Map(results, func(r round) int { return r.score }))
+	total := i.Sum(i.Map(results, func(r round, _ int) int { return r.score }))
 	t.Log(total)
 }
 
@@ -60,7 +60,7 @@ func parse1(in string) i.Iterable[[2]RPS] {
 	lines := i.Split[rune](i.Runes(in), []rune{'\n'})
 	parsed := i.Map(
 		lines,
-		func(l []rune) [2]RPS {
+		func(l []rune, _ int) [2]RPS {
 			if len(l) != 3 || l[1] != ' ' {
 				panic(fmt.Errorf("invalid line: %q", string(l)))
 			}
@@ -76,7 +76,7 @@ type round struct {
 	score    int
 }
 
-func play1(themMe [2]RPS) round {
+func play1(themMe [2]RPS, _ int) round {
 	ret := round{them: themMe[0], me: themMe[1]}
 	ret.o = ret.me.vs(ret.them)
 	ret.score = ret.me.score() + ret.o.score()

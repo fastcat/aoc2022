@@ -44,15 +44,15 @@ func TestPart1(t *testing.T) {
 
 func parse(data []byte) i.Iterable[[]int] {
 	d := i.Slice(data)
-	spl := i.Split[byte](d, []byte{'\n', '\n'})
-	parsed := i.Map(spl, func(in []byte) []int {
-		lines := i.ToStrings(i.Split[byte](i.Slice(in), []byte{'\n'}))
-		ints := i.Map(lines, i.Muster(strconv.Atoi))
+	spl := i.Split(d, []byte{'\n', '\n'})
+	parsed := i.Map(spl, func(in []byte, _ int) []int {
+		lines := i.ToStrings(i.Split(i.Slice(in), []byte{'\n'}))
+		ints := i.Map(lines, i.NoIndex(i.Muster(strconv.Atoi)))
 		return i.ToSlice(ints)
 	})
 	return parsed
 }
 
 func elves(in i.Iterable[[]int]) i.Iterable[int] {
-	return i.Map(in, u.Sum[int])
+	return i.Map(in, i.NoIndex(u.Sum[int]))
 }

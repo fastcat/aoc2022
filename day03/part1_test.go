@@ -30,10 +30,12 @@ func TestPart1Sample(t *testing.T) {
 			{"ttgJtRGJ", "QctTZtZT"},
 			{"CrZsJsPPZsGz", "wwsLwLmpwMDw"},
 		},
-		i.ToSlice(i.Map(bags, func(in [2][]rune) [2]string { return [2]string{string(in[0]), string(in[1])} })),
+		i.ToSlice(i.Map(bags, func(in [2][]rune, _ int) [2]string {
+			return [2]string{string(in[0]), string(in[1])}
+		})),
 	)
-	dupes := i.Map(bags, findDupe)
-	dupeRunes := i.Map(dupes, unPriority)
+	dupes := i.Map(bags, i.NoIndex(findDupe))
+	dupeRunes := i.Map(dupes, i.NoIndex(unPriority))
 	a.Equal(
 		[]rune{'p', 'L', 'P', 'v', 't', 's'},
 		i.ToSlice(dupeRunes),
@@ -47,7 +49,7 @@ var input string
 
 func TestPart1(t *testing.T) {
 	bags := parse(input)
-	dupes := i.Map(bags, findDupe)
+	dupes := i.Map(bags, i.NoIndex(findDupe))
 	result := int(i.Sum(dupes))
 	t.Log(result)
 }
@@ -55,7 +57,7 @@ func TestPart1(t *testing.T) {
 func parse(in string) i.Iterable[[2][]rune] {
 	r := i.Runes(in)
 	l := i.Split[rune](r, []rune{'\n'})
-	p := i.Map(l, func(l []rune) [2][]rune {
+	p := i.Map(l, func(l []rune, _ int) [2][]rune {
 		return [2][]rune{
 			l[0 : len(l)/2],
 			l[len(l)/2:],

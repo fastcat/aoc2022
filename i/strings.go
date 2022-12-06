@@ -20,7 +20,7 @@ func (i *runeIterator) Next() (rune, bool) {
 }
 
 func ToStrings[T stringable](in Iterable[T]) Iterable[string] {
-	return Map(in, func(i T) string { return string(i) })
+	return Map(in, func(i T, _ int) string { return string(i) })
 }
 
 type stringable interface {

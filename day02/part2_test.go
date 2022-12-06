@@ -18,20 +18,20 @@ func TestPart2Sample(t *testing.T) {
 		},
 		i.ToSlice(results),
 	)
-	total := i.Sum(i.Map(results, func(r round) int { return r.score }))
+	total := i.Sum(i.Map(results, func(r round, _ int) int { return r.score }))
 	r.Equal(12, total)
 }
 
 func TestPart2(t *testing.T) {
 	results := i.Map(parse2(input), play2)
-	total := i.Sum(i.Map(results, func(r round) int { return r.score }))
+	total := i.Sum(i.Map(results, func(r round, _ int) int { return r.score }))
 	t.Log(total)
 }
 
 func parse2(in string) i.Iterable[round] {
 	return i.Map(
 		i.Split[rune](i.Runes(in), []rune{'\n'}),
-		func(l []rune) round {
+		func(l []rune, _ int) round {
 			return round{
 				them: parseRPS(rune(l[0])),
 				o:    parseOutcome(rune(l[2])),
@@ -40,7 +40,7 @@ func parse2(in string) i.Iterable[round] {
 	)
 }
 
-func play2(r round) round {
+func play2(r round, _ int) round {
 	r.me = r.them.rev(r.o)
 	r.score = r.me.score() + r.o.score()
 	return r

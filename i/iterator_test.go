@@ -14,14 +14,14 @@ func AssertIterator[T any](
 	// extra call to Next() after it was already done
 	for i := 0; i <= len(expected)+1; i++ {
 		value, done := it.Next()
-		ret = ret && a.Equal(i >= len(expected), done)
-		if done {
-			ret = ret && a.Zero(value)
+		if a.Equal(i >= len(expected), done) {
+			if done {
+				ret = ret && a.Zero(value)
+			} else if i < len(expected) {
+				ret = ret && a.Equal(expected[i], value)
+			}
 		} else {
-			ret = ret && a.NotZero(value)
-		}
-		if i < len(expected) {
-			ret = ret && a.Equal(expected[i], value)
+			ret = false
 		}
 	}
 	return ret

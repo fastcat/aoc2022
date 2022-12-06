@@ -23,8 +23,8 @@ func TestPart2(t *testing.T) {
 
 func findBadge(in i.Iterable[[]rune]) i.Iterable[int] {
 	threes := i.Chunk(in, 3)
-	return i.Map(threes, func(group [][]rune) int {
-		groupSets := i.Map(i.Slice(group), prioritySet)
+	return i.Map(threes, func(group [][]rune, _ int) int {
+		groupSets := i.Map(i.Slice(group), i.NoIndex(prioritySet))
 		common := i.Reduce(groupSets, int64(0), func(common int64, bag int64, i int) int64 {
 			if i == 0 {
 				return bag
