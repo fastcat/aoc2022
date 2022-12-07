@@ -13,6 +13,21 @@ func Min[T constraints.Ordered](in Iterable[T]) T {
 		return min
 	})
 }
+
+func MinBy[T any, U constraints.Ordered](in Iterable[T], f func(T) U) (T, int) {
+	minIdx := -1
+	var minT T
+	var minVal U
+	For(in, func(value T, i int) {
+		if i == 0 {
+			minIdx, minT, minVal = 0, value, f(value)
+		} else if u := f(value); u < minVal {
+			minIdx, minT, minVal = i, value, u
+		}
+	})
+	return minT, minIdx
+}
+
 func Max[T constraints.Ordered](in Iterable[T]) T {
 	return Reduce(in, u.Zero[T](), func(max, value T, i int) T {
 		if i == 0 || value > max {
