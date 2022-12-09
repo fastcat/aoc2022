@@ -30,6 +30,31 @@ func (i *sliceIterator[T]) Next() (value T, done bool) {
 	return
 }
 
+type revSlice[T any] []T
+
+func RevSlice[T any](s []T) Iterable[T] {
+	return revSlice[T](s)
+}
+
+func (i revSlice[T]) Iterator() Iterator[T] {
+	return &revSliceIterator[T]{i, len(i) - 1}
+}
+
+type revSliceIterator[T any] struct {
+	s []T
+	i int
+}
+
+func (i *revSliceIterator[T]) Next() (value T, done bool) {
+	if i.i < 0 {
+		done = true
+		return
+	}
+	value = i.s[i.i]
+	i.i--
+	return
+}
+
 func ToSlice[T any](in Iterable[T]) []T {
 	var out []T
 	For(in, func(i T, _ int) { out = append(out, i) })

@@ -18,6 +18,10 @@ type mapIter[T, U any] struct {
 	i  int
 }
 
+func MapI[T, U any](in Iterator[T], f func(T, int) U) Iterator[U] {
+	return &mapIter[T, U]{in, f, 0}
+}
+
 func (m *mapIter[T, U]) Next() (value U, done bool) {
 	var v T
 	v, done = m.in.Next()
