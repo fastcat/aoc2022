@@ -42,5 +42,10 @@ func Sum[T Addable](in Iterable[T]) T {
 		return sum + value
 	})
 }
+func SumI[T Addable](in Iterator[T]) T {
+	return ReduceI(in, u.Zero[T](), func(sum, value T, i int) T {
+		return sum + value
+	})
+}
 
 type Addable = u.Addable

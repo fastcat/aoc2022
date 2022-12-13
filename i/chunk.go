@@ -8,6 +8,12 @@ func Chunk[T any](in Iterable[T], size int) Iterable[[]T] {
 	}
 	return chunk[T]{in, size}
 }
+func ChunkI[T any](in Iterator[T], size int) Iterator[[]T] {
+	if size < 1 {
+		panic(errors.New("invalid size"))
+	}
+	return chunkIter[T]{in, size}
+}
 
 type chunk[T any] struct {
 	in   Iterable[T]

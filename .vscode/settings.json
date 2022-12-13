@@ -8,5 +8,6 @@
   "files.trimFinalNewlines": true,
   "go.testFlags": [
     "-v"
-  ]
+  ],
+  "go.testTimeout": "5s"
 }

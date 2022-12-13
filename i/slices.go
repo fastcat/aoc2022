@@ -60,6 +60,11 @@ func ToSlice[T any](in Iterable[T]) []T {
 	For(in, func(i T, _ int) { out = append(out, i) })
 	return out
 }
+func ToSliceI[T any](in Iterator[T]) []T {
+	var out []T
+	ForI(in, func(i T, _ int) { out = append(out, i) })
+	return out
+}
 
 func Top[T constraints.Ordered](in Iterable[T], n int) []T {
 	// TODO: use heapsort instead
