@@ -39,6 +39,13 @@ func (c *Circular[T]) Push(v T) {
 	c.len++
 }
 
+func (c *Circular[T]) GrowPush(v T) {
+	if len(c.s) == c.len {
+		c.GrowCap(c.Cap() * 2)
+	}
+	c.Push(v)
+}
+
 func (c *Circular[T]) PushAll(vs ...T) {
 	if len(c.s) < c.len+len(vs) {
 		panic(errors.New("circular buffer full"))
@@ -49,6 +56,16 @@ func (c *Circular[T]) PushAll(vs ...T) {
 		c.s[p] = v
 		c.len++
 	}
+}
+func (c *Circular[T]) GrowPushAll(vs ...T) {
+	if nc := c.len + len(vs); len(c.s) < nc {
+		c2 := c.Cap() * 2
+		if nc < c2 {
+			nc = c2
+		}
+		c.GrowCap(nc)
+	}
+	c.PushAll(vs...)
 }
 
 func (c *Circular[T]) Pop() T {
