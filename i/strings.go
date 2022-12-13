@@ -2,11 +2,13 @@ package i
 
 import "unicode/utf8"
 
-type Runes string
+func Runes(s string) Iterable[rune] { return runes(s) }
+
+type runes string
 
 // var _ Iterable[rune] = Runes("")
 
-func (r Runes) Iterator() Iterator[rune] {
+func (r runes) Iterator() Iterator[rune] {
 	i := runeIterator(r)
 	return &i
 }

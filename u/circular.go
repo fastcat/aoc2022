@@ -13,6 +13,23 @@ func NewCircular[T any](cap int) *Circular[T] {
 	}
 }
 
+func CircularFrom[T any](items []T) *Circular[T] {
+	s := make([]T, len(items))
+	copy(s, items)
+	return &Circular[T]{s: s, len: len(items)}
+}
+
+func (c *Circular[T]) GrowCap(cap int) {
+	if cap < len(c.s) {
+		panic(errors.New("can only grow capacity"))
+	}
+	// TODO: could optimize further
+	s := make([]T, cap)
+	copy(s, c.All())
+	c.s = s
+	c.head = 0
+}
+
 func (c *Circular[T]) Push(v T) {
 	if len(c.s) == c.len {
 		panic(errors.New("circular buffer full"))
@@ -53,6 +70,8 @@ func (c *Circular[T]) Len() int {
 func (c *Circular[T]) Cap() int {
 	return len(c.s)
 }
+
+func (c *Circular[T]) Full() bool { return c.len == len(c.s) }
 
 func (c *Circular[T]) All() []T {
 	if c.len == 0 {
