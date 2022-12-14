@@ -18,3 +18,8 @@ func (errDone) Error() string { return "iterator done" }
 
 // Done is returned from Streamer[T].Next() when it finishes streaming normally.
 var Done errDone
+
+type PeekIterator[T any] interface {
+	Iterator[T]
+	Peek() (value T, hasNext bool)
+}

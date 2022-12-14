@@ -29,6 +29,14 @@ func (i *sliceIterator[T]) Next() (value T, done bool) {
 	i.i++
 	return
 }
+func (i *sliceIterator[T]) Peek() (value T, done bool) {
+	if i.i >= len(i.s) {
+		done = true
+		return
+	}
+	value = i.s[i.i]
+	return
+}
 
 type revSlice[T any] []T
 
