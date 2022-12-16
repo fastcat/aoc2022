@@ -76,7 +76,8 @@ func (rn *reducedNet) search(lim int) (key, []best) {
 		if kb == nil {
 			panic("walk from unregistered start")
 		}
-		// minute 0 is special, we have a bogus pos and must move
+		// minute 0 is special, we have a bogus pos and must move, can't wait or do
+		// a valve
 		if k.pos >= 0 {
 			k2 := k
 			k2.min++
@@ -98,29 +99,32 @@ func (rn *reducedNet) search(lim int) (key, []best) {
 				}
 			}
 		}
-		// we could travel somewhere
-		var d []int
-		if k.pos < 0 {
-			d = rn.zerodists
-		} else {
-			d = rn.dists[k.pos]
-		}
-		for np, nd := range d {
-			if np == k.pos {
-				continue
+		// we could travel somewhere that has a closed valve (to open it). we should
+		// never move twice in a row, that should have been just one move.
+		if k.pos < 0 || kb.prev.pos == k.pos {
+			var d []int
+			if k.pos < 0 {
+				d = rn.zerodists
+			} else {
+				d = rn.dists[k.pos]
 			}
-			k4 := k
-			k4.min += nd
-			k4.pos = np
-			if k4.min > 30 {
-				// unreachable
-				continue
-			}
-			// things flow while we move!
-			nt := kb.total + kb.rate*nd
-			if nb := b.get(k4); nb == nil || nb.total < nt {
-				b.set(k4, best{k, kb.rate, nt})
-				walk(k4)
+			for np, nd := range d {
+				if np == k.pos || k.open&(1<<np) != 0 {
+					continue
+				}
+				k4 := k
+				k4.min += nd
+				k4.pos = np
+				if k4.min > 30 {
+					// unreachable
+					continue
+				}
+				// things flow while we move!
+				nt := kb.total + kb.rate*nd
+				if nb := b.get(k4); nb == nil || nb.total < nt {
+					b.set(k4, best{k, kb.rate, nt})
+					walk(k4)
+				}
 			}
 		}
 	}
