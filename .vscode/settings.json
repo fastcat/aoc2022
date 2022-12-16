@@ -7,7 +7,9 @@
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
   "go.testFlags": [
-    "-v"
+    "-v",
+    "-args",
+    "-test.v"
   ],
-  "go.testTimeout": "5s"
+  "go.testTimeout": "5s",
 }
