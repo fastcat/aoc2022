@@ -1,8 +1,10 @@
 package day16
 
+import "fmt"
+
 type atMinute []atPos
 type atPos []withOpen
-type withOpen map[int64]best
+type withOpen map[uint16]best
 type best struct {
 	prev  key
 	rate  int
@@ -11,7 +13,7 @@ type best struct {
 type key struct {
 	min  int
 	pos  int
-	open int64
+	open uint16
 }
 
 func (b atMinute) get(k key) *best {
@@ -89,7 +91,7 @@ func (w *walker) walkFrom(k key) {
 			w.walkFrom(k2)
 		}
 		// if the current valve is closed, we could open it
-		if pm := int64(1) << k.pos; k.open&pm == 0 {
+		if pm := uint16(1) << k.pos; k.open&pm == 0 {
 			k3 := k2 // keep the min++
 			k3.open = k2.open | pm
 			if nb := w.b.get(k3); nb == nil || nb.total < nt {
@@ -116,7 +118,7 @@ func (w *walker) walkFrom(k key) {
 			k4 := k
 			k4.min += nd
 			k4.pos = np
-			if k4.min > 30 {
+			if k4.min > w.lim {
 				// unreachable
 				continue
 			}
@@ -131,6 +133,9 @@ func (w *walker) walkFrom(k key) {
 }
 
 func (rn *reducedNet) walker(lim int) *walker {
+	if len(rn.rates) > 16 {
+		panic(fmt.Errorf("net too big for uint16"))
+	}
 	return &walker{
 		rn:  rn,
 		lim: lim,
@@ -176,7 +181,7 @@ func (w *walker) bestPath() (key, []best) {
 func (w *walker) bestPair() (key, key, int) {
 	end := w.b[w.lim]
 	// find the best endpoint for each open mask
-	bestByOpen := map[int64]int{}
+	bestByOpen := map[uint16]int{}
 	for ei, ep := range end {
 		for eo, b := range ep {
 			if bei, ok := bestByOpen[eo]; !ok {
@@ -188,33 +193,37 @@ func (w *walker) bestPair() (key, key, int) {
 	}
 
 	// make the mask of used bits to invert a bitset
-	mask := int64(0)
+	mask := uint16(0)
 	for i := range w.rn.rates {
 		mask |= 1 << i
 	}
 
-	bestOpen, bestTotal := int64(0), 0
+	// the best pair with our first item is disjoint with, but not necessarily the
+	// inverse of, the first one
+	bestOpen1, bestOpen2, bestTotal := uint16(0), uint16(0), 0
 
 	// find disjoint pairs, use simplistic mask ordering to deduplicate
 	for o, bei := range bestByOpen {
-		oo := o ^ mask
-		if oo < o {
+		oom := o ^ mask
+		if oom < o {
 			continue
 		}
-		if obei, ok := bestByOpen[oo]; !ok {
-			continue
-		} else {
+		for oo, obei := range bestByOpen {
+			if oo&oom != oo {
+				// not disjoint
+				continue
+			}
 			ob := end[bei][o]
 			oob := end[obei][oo]
 			t := ob.total + oob.total
 			if t > bestTotal {
-				bestOpen, bestTotal = o, t
+				bestOpen1, bestOpen2, bestTotal = o, oo, t
 			}
 		}
 	}
 
-	k1 := key{min: w.lim, pos: bestByOpen[bestOpen], open: bestOpen}
-	k2 := key{min: w.lim, pos: bestByOpen[bestOpen^mask], open: bestOpen ^ mask}
+	k1 := key{min: w.lim, pos: bestByOpen[bestOpen1], open: bestOpen1}
+	k2 := key{min: w.lim, pos: bestByOpen[bestOpen2], open: bestOpen2}
 	return k1, k2, bestTotal
 }
 
