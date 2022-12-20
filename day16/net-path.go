@@ -1,7 +1,5 @@
 package day16
 
-import "fmt"
-
 type atMinute []atPos
 type atPos []withOpen
 type withOpen map[int64]best
@@ -27,11 +25,8 @@ func (b atMinute) get(k key) *best {
 	return b[k.min].get(k)
 }
 func (b *atMinute) set(k key, bv best) {
-	if len(*b) < k.min {
-		if len(*b) < k.min-1 {
-			panic(fmt.Errorf("skipping time"))
-		}
-		(*b) = append((*b), make(atPos, 0, len((*b)[k.min-1])))
+	for len(*b) <= k.min {
+		(*b) = append((*b), make(atPos, 0, k.pos))
 	}
 	(*b)[k.min].set(k, bv)
 }
@@ -62,79 +57,96 @@ func (mp withOpen) get(k key) *best {
 	}
 }
 
-func (rn *reducedNet) search(lim int) (key, []best) {
-	b := make(atMinute, lim+1)
-	// minute 0 is nonsense
-	b[0] = atPos{}
-	var walk func(key)
-	walk = func(k key) {
-		if k.min >= lim {
-			// time limit is up
-			return
+type walker struct {
+	rn  *reducedNet
+	b   atMinute
+	lim int
+}
+
+func (w *walker) walkFrom(k key) {
+	if len(w.b) == 0 {
+		w.b = make(atMinute, 1, w.lim+1)
+		// minute 0 is nonsense
+		w.b[0] = atPos{}
+	}
+	if k.min >= w.lim {
+		// time limit is up
+		return
+	}
+	kb := w.b.get(k)
+	if kb == nil {
+		panic("walk from unregistered start")
+	}
+	// minute 0 is special, we have a bogus pos and must move, can't wait or do
+	// a valve
+	if k.pos >= 0 {
+		k2 := k
+		k2.min++
+		nt := kb.total + kb.rate
+		// we could do nothing and let things flow
+		if nb := w.b.get(k2); nb == nil || nb.total < nt {
+			w.b.set(k2, best{k, kb.rate, nt})
+			w.walkFrom(k2)
 		}
-		kb := b.get(k)
-		if kb == nil {
-			panic("walk from unregistered start")
-		}
-		// minute 0 is special, we have a bogus pos and must move, can't wait or do
-		// a valve
-		if k.pos >= 0 {
-			k2 := k
-			k2.min++
-			nt := kb.total + kb.rate
-			// we could do nothing and let things flow
-			if nb := b.get(k2); nb == nil || nb.total < nt {
-				b.set(k2, best{k, kb.rate, nt})
-				walk(k2)
-			}
-			// if the current valve is closed, we could open it
-			if pm := int64(1) << k.pos; k.open&pm == 0 {
-				k3 := k2 // keep the min++
-				k3.open = k2.open | pm
-				if nb := b.get(k3); nb == nil || nb.total < nt {
-					// rate will go up after we open the valve, but won't count towards
-					// the total until the following minute(s)
-					b.set(k3, best{k, kb.rate + rn.rates[k.pos], nt})
-					walk(k3)
-				}
-			}
-		}
-		// we could travel somewhere that has a closed valve (to open it). we should
-		// never move twice in a row, that should have been just one move.
-		if k.pos < 0 || kb.prev.pos == k.pos {
-			var d []int
-			if k.pos < 0 {
-				d = rn.zerodists
-			} else {
-				d = rn.dists[k.pos]
-			}
-			for np, nd := range d {
-				if np == k.pos || k.open&(1<<np) != 0 {
-					continue
-				}
-				k4 := k
-				k4.min += nd
-				k4.pos = np
-				if k4.min > 30 {
-					// unreachable
-					continue
-				}
-				// things flow while we move!
-				nt := kb.total + kb.rate*nd
-				if nb := b.get(k4); nb == nil || nb.total < nt {
-					b.set(k4, best{k, kb.rate, nt})
-					walk(k4)
-				}
+		// if the current valve is closed, we could open it
+		if pm := int64(1) << k.pos; k.open&pm == 0 {
+			k3 := k2 // keep the min++
+			k3.open = k2.open | pm
+			if nb := w.b.get(k3); nb == nil || nb.total < nt {
+				// rate will go up after we open the valve, but won't count towards
+				// the total until the following minute(s)
+				w.b.set(k3, best{k, kb.rate + w.rn.rates[k.pos], nt})
+				w.walkFrom(k3)
 			}
 		}
 	}
-	walk(key{0, -1, 0})
+	// we could travel somewhere that has a closed valve (to open it). we should
+	// never move twice in a row, that should have been just one move.
+	if k.pos < 0 || kb.prev.pos == k.pos {
+		var d []int
+		if k.pos < 0 {
+			d = w.rn.zerodists
+		} else {
+			d = w.rn.dists[k.pos]
+		}
+		for np, nd := range d {
+			if np == k.pos || k.open&(1<<np) != 0 {
+				continue
+			}
+			k4 := k
+			k4.min += nd
+			k4.pos = np
+			if k4.min > 30 {
+				// unreachable
+				continue
+			}
+			// things flow while we move!
+			nt := kb.total + kb.rate*nd
+			if nb := w.b.get(k4); nb == nil || nb.total < nt {
+				w.b.set(k4, best{k, kb.rate, nt})
+				w.walkFrom(k4)
+			}
+		}
+	}
+}
 
+func (rn *reducedNet) walker(lim int) *walker {
+	return &walker{
+		rn:  rn,
+		lim: lim,
+	}
+}
+
+func (w *walker) walk() {
+	w.walkFrom(key{0, -1, 0})
+}
+
+func (w *walker) bestPath() (key, []best) {
 	// find the best endpoint in the last minute, then walk the path backwards
 	// from there
-	last := b[lim]
+	last := w.b[w.lim]
 	var bb best
-	bk := key{min: lim}
+	bk := key{min: w.lim}
 	for pi, p := range last {
 		for o, b := range p {
 			if b.total > bb.total {
@@ -144,9 +156,9 @@ func (rn *reducedNet) search(lim int) (key, []best) {
 			}
 		}
 	}
-	path := make([]best, lim)
+	path := make([]best, w.lim)
 	for i, k := len(path)-1, bk; ; i-- {
-		bb := b[k.min][k.pos][k.open]
+		bb := w.b[k.min][k.pos][k.open]
 		path[i] = bb
 		k = bb.prev
 		if k.pos < 0 {
@@ -155,4 +167,10 @@ func (rn *reducedNet) search(lim int) (key, []best) {
 		}
 	}
 	return bk, path
+}
+
+func (rn *reducedNet) search(lim int) (key, []best) {
+	w := rn.walker(lim)
+	w.walk()
+	return w.bestPath()
 }
