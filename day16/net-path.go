@@ -141,6 +141,20 @@ func (w *walker) walk() {
 	w.walkFrom(key{0, -1, 0})
 }
 
+func (w *walker) pathFrom(end key) []best {
+	path := make([]best, w.lim)
+	for i, k := len(path)-1, end; ; i-- {
+		bb := w.b[k.min][k.pos][k.open]
+		path[i] = bb
+		k = bb.prev
+		if k.pos < 0 {
+			path = path[i-1:]
+			break
+		}
+	}
+	return path
+}
+
 func (w *walker) bestPath() (key, []best) {
 	// find the best endpoint in the last minute, then walk the path backwards
 	// from there
@@ -156,17 +170,52 @@ func (w *walker) bestPath() (key, []best) {
 			}
 		}
 	}
-	path := make([]best, w.lim)
-	for i, k := len(path)-1, bk; ; i-- {
-		bb := w.b[k.min][k.pos][k.open]
-		path[i] = bb
-		k = bb.prev
-		if k.pos < 0 {
-			path = path[i-1:]
-			break
+	return bk, w.pathFrom(bk)
+}
+
+func (w *walker) bestPair() (key, key, int) {
+	end := w.b[w.lim]
+	// find the best endpoint for each open mask
+	bestByOpen := map[int64]int{}
+	for ei, ep := range end {
+		for eo, b := range ep {
+			if bei, ok := bestByOpen[eo]; !ok {
+				bestByOpen[eo] = ei
+			} else if end[bei][eo].total < b.total {
+				bestByOpen[eo] = ei
+			}
 		}
 	}
-	return bk, path
+
+	// make the mask of used bits to invert a bitset
+	mask := int64(0)
+	for i := range w.rn.rates {
+		mask |= 1 << i
+	}
+
+	bestOpen, bestTotal := int64(0), 0
+
+	// find disjoint pairs, use simplistic mask ordering to deduplicate
+	for o, bei := range bestByOpen {
+		oo := o ^ mask
+		if oo < o {
+			continue
+		}
+		if obei, ok := bestByOpen[oo]; !ok {
+			continue
+		} else {
+			ob := end[bei][o]
+			oob := end[obei][oo]
+			t := ob.total + oob.total
+			if t > bestTotal {
+				bestOpen, bestTotal = o, t
+			}
+		}
+	}
+
+	k1 := key{min: w.lim, pos: bestByOpen[bestOpen], open: bestOpen}
+	k2 := key{min: w.lim, pos: bestByOpen[bestOpen^mask], open: bestOpen ^ mask}
+	return k1, k2, bestTotal
 }
 
 func (rn *reducedNet) search(lim int) (key, []best) {
