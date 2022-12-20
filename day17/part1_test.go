@@ -12,12 +12,13 @@ var sample string
 
 func TestPart1Sample(t *testing.T) {
 	a := assert.New(t)
-	j := parse(sample)
-	a.Len(j, len(sample)-1)
+	jets := parse(sample)
+	a.Len(jets, len(sample)-1)
 
 	var b board
-	for i, jo := 0, 0; i < 2022; i++ {
-		b.play(shapes[i%len(shapes)], j, &jo)
+	var pos boardPos
+	for i := 0; i < 2022; i++ {
+		pos = b.play(shapes, jets, pos)
 	}
 	a.Equal(3068, b.height())
 }
@@ -26,10 +27,11 @@ func TestPart1Sample(t *testing.T) {
 var input string
 
 func TestPart1(t *testing.T) {
-	j := parse(input)
+	jets := parse(input)
 	var b board
-	for i, jo := 0, 0; i < 2022; i++ {
-		b.play(shapes[i%len(shapes)], j, &jo)
+	var pos boardPos
+	for i := 0; i < 2022; i++ {
+		pos = b.play(shapes, jets, pos)
 	}
 	t.Log(b.height())
 }

@@ -82,17 +82,18 @@ func Test_board_collides(t *testing.T) {
 func Test_board_play(t *testing.T) {
 	var b board
 	jets := parse(sample)
-	jo := 0
-	b.play(shapes[0], jets, &jo)
-	// t.Log("\n" + b.String())
-	b.play(shapes[1], jets, &jo)
-	// t.Log("\n" + b.String())
-	b.play(shapes[2], jets, &jo)
-	// t.Log("\n" + b.String())
-	b.play(shapes[3], jets, &jo)
-	// t.Log("\n" + b.String())
-	b.play(shapes[4], jets, &jo)
-	// t.Log("\n" + b.String())
+	var pos boardPos
+	pos = b.play(shapes, jets, pos)
+	t.Log("\n" + b.String())
+	pos = b.play(shapes, jets, pos)
+	t.Log("\n" + b.String())
+	pos = b.play(shapes, jets, pos)
+	t.Log("\n" + b.String())
+	pos = b.play(shapes, jets, pos)
+	t.Log("\n" + b.String())
+	pos = b.play(shapes, jets, pos)
+	t.Log("\n" + b.String())
+	t.Log(pos)
 	assert.Equal(t,
 		board{
 			0b111100,
@@ -107,4 +108,11 @@ func Test_board_play(t *testing.T) {
 		},
 		b,
 	)
+}
+
+func Test_board_playLoop(t *testing.T) {
+	var b board
+	jets := parse(sample)
+	posList := b.playLoop(shapes, jets, boardPos{}, 10)
+	t.Log(posList)
 }
