@@ -53,10 +53,13 @@ func (b *board) ensureRow(r int) {
 		*b = append(*b, 0)
 	}
 }
+
+/*
 func (b *board) placeRock(r, c int) {
 	b.ensureRow(r)
 	(*b)[r] |= 1 << c
 }
+*/
 
 func (b board) collides(r, c int, s shape) bool {
 	h := s.height()
@@ -102,6 +105,7 @@ func (b *board) play(shapes []shape, jets []direction, pos boardPos) boardPos {
 		// debug("after jet")
 		if r == 0 || b.collides(r-1, c, s) {
 			b.placeShape(r, c, s)
+			pos.lastRows = b.lastRows()
 			return pos
 		} else {
 			r--
@@ -115,7 +119,7 @@ const rowsPerInt = 64 / rowWidth
 func (b board) lastRows() uint64 {
 	h := b.height()
 	var lastRows uint64
-	for i := h - 1; i >= 0; i-- {
+	for i := h - 1; i >= h-rowsPerInt && i >= 0; i-- {
 		lastRows = (lastRows << rowWidth) | uint64(b[i])
 	}
 	return lastRows
@@ -140,9 +144,96 @@ func (b *board) playLoop(
 	ret := make([]boardPos, 0, turns)
 	for i := 0; i < turns; i++ {
 		pos = b.play(shapes, jets, pos)
-		// TODO: can update this incrementally
-		pos.lastRows = b.lastRows()
 		ret = append(ret, pos)
 	}
 	return ret
+}
+
+func (b *board) loopFinder(shapes []shape, jets []direction) *loopFinder {
+	return &loopFinder{
+		b,
+		0,
+		boardPos{},
+		shapes,
+		jets,
+		make(map[boardPos]int, 1000),
+		make(map[boardPos]int, 1000),
+	}
+}
+
+type loopFinder struct {
+	b          *board
+	rounds     int
+	pos        boardPos
+	shapes     []shape
+	jets       []direction
+	lastRound  map[boardPos]int
+	lastHeight map[boardPos]int
+}
+
+func (l *loopFinder) run() {
+	// update state if we are resuming from a failed verify
+	if l.lastRound[l.pos] != l.rounds {
+		l.lastHeight[l.pos] = l.b.height()
+		l.lastRound[l.pos] = l.rounds
+	}
+	for {
+		l.pos = l.b.play(l.shapes, l.jets, l.pos)
+		l.rounds++
+		if _, ok := l.lastHeight[l.pos]; ok {
+			return
+		}
+		l.lastHeight[l.pos] = l.b.height()
+		l.lastRound[l.pos] = l.rounds
+	}
+}
+
+func (l *loopFinder) verify() (roundOffset, rounds, heightOffset, height int, valid bool) {
+	roundOffset = l.lastRound[l.pos]
+	heightOffset = l.lastHeight[l.pos]
+	h2, r2 := l.b.height(), l.rounds
+	height = h2 - heightOffset
+	rounds = r2 - roundOffset
+	// clone the board in case we fail verification, we can run again
+	b2 := l.b.clone()
+	// each loop must increase the height at least one, so playing the height
+	// delta more rounds should ensure we can verify the loop
+	b2.playLoop(l.shapes, l.jets, l.pos, h2-heightOffset)
+	bsub1 := b2[heightOffset:h2]
+	bsub2 := b2[h2 : h2+height]
+	for i := 0; i < len(bsub1); i++ {
+		if bsub1[i] != bsub2[i] {
+			valid = false
+			return
+		}
+	}
+	valid = true
+	return
+}
+
+func (l *loopFinder) search() (roundOffset, rounds, heightOffset, height int) {
+	for {
+		l.run()
+		var valid bool
+		if roundOffset, rounds, heightOffset, height, valid = l.verify(); valid {
+			return
+		}
+	}
+}
+
+func (l *loopFinder) heightAfter(targetRounds int) int {
+	roundOffset, loopRounds, heightOffset, loopHeight := l.search()
+	// to get to the target number of rounds, we do roundOffset, plus some number
+	// of loops length `rounds`, plus a remainder we need to compute the remainder
+	// to play it out and find out the height increase.
+	loops := (targetRounds - roundOffset) / loopRounds
+	remainder := (targetRounds - roundOffset) % loopRounds
+
+	b2 := l.b.clone()
+	h1 := b2.height()
+	b2.playLoop(l.shapes, l.jets, l.pos, remainder)
+	h2 := b2.height()
+	heightRemainder := h2 - h1
+	finalHeight := heightOffset + loopHeight*loops + heightRemainder
+	return finalHeight
 }

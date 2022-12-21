@@ -80,21 +80,16 @@ func Test_board_collides(t *testing.T) {
 }
 
 func Test_board_play(t *testing.T) {
+	a := assert.New(t)
 	var b board
 	jets := parse(sample)
 	var pos boardPos
-	pos = b.play(shapes, jets, pos)
-	t.Log("\n" + b.String())
-	pos = b.play(shapes, jets, pos)
-	t.Log("\n" + b.String())
-	pos = b.play(shapes, jets, pos)
-	t.Log("\n" + b.String())
-	pos = b.play(shapes, jets, pos)
-	t.Log("\n" + b.String())
-	pos = b.play(shapes, jets, pos)
-	t.Log("\n" + b.String())
-	t.Log(pos)
-	assert.Equal(t,
+	for i := 0; i < 5; i++ {
+		pos = b.play(shapes, jets, pos)
+		// t.Log("\n" + b.String())
+		// t.Log(pos)
+	}
+	a.Equal(
 		board{
 			0b111100,
 			0b1000,
@@ -108,11 +103,47 @@ func Test_board_play(t *testing.T) {
 		},
 		b,
 	)
+	// msb->lsb is top->down
+	expectedLastRows := uint64(
+		0b_0110000_0110000_0010000_0010100_0010100_0011111_0011100_0001000_0111100,
+	)
+	// t.Logf("%063b", expectedLastRows)
+	if !a.Equal(
+		expectedLastRows,
+		b.lastRows(),
+	) {
+		t.Logf("%063b", b.lastRows())
+	}
+	if !a.Equal(
+		expectedLastRows,
+		pos.lastRows,
+	) {
+		t.Logf("%063b", pos.lastRows)
+	}
 }
 
 func Test_board_playLoop(t *testing.T) {
+	a := assert.New(t)
 	var b board
 	jets := parse(sample)
-	posList := b.playLoop(shapes, jets, boardPos{}, 10)
-	t.Log(posList)
+	posList := b.playLoop(shapes, jets, boardPos{}, 5)
+	a.Len(posList, 5)
+	// t.Log(posList)
+	expectedLastRows := uint64(
+		0b_0110000_0110000_0010000_0010100_0010100_0011111_0011100_0001000_0111100,
+	)
+	// t.Logf("%063b", expectedLastRows)
+	if !a.Equal(
+		expectedLastRows,
+		b.lastRows(),
+	) {
+		t.Logf("%063b", b.lastRows())
+	}
+	if !a.Equal(
+		expectedLastRows,
+		posList[4].lastRows,
+	) {
+		t.Logf("%063b", posList[4].lastRows)
+	}
+
 }

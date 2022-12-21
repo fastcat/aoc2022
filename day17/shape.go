@@ -41,9 +41,12 @@ func (s shape) String() string {
 	return buf.String()
 }
 
+/*
 func (s shape) at(r, c int) bool {
 	return uint32(s)&(1<<(c+8*r)) != 0
 }
+*/
+
 func (s shape) row(r int) row {
 	return row((uint32(s) >> (8 * r)) & 0xff)
 }
