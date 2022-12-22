@@ -16,31 +16,26 @@ func TestPart1Sample(t *testing.T) {
 	a.Len(bps, 2)
 	a.Equal(bps, []*blueprint{
 		{
-			oreBot:      cost{4, 0, 0},
-			clayBot:     cost{2, 0, 0},
-			obsidianBot: cost{3, 14, 0},
-			geodeBot:    cost{2, 0, 7},
+			{4, 0, 0},
+			{2, 0, 0},
+			{3, 14, 0},
+			{2, 0, 7},
 		},
 		{
-			oreBot:      cost{2, 0, 0},
-			clayBot:     cost{3, 0, 0},
-			obsidianBot: cost{3, 8, 0},
-			geodeBot:    cost{3, 0, 12},
+			{2, 0, 0},
+			{3, 0, 0},
+			{3, 8, 0},
+			{3, 0, 12},
 		},
 	})
 
-	s := initialState()
-	for s.minute < 24 {
-		s = s.playSimple(bps[0])
-		t.Log(s)
-	}
-	t.Log(s)
-	a.Equal(9, s.inv.geodes)
-	s = initialState()
-	for s.minute < 24 {
-		s = s.playSimple(bps[1])
-		t.Log(s)
-	}
-	t.Log(s)
-	a.Equal(12, s.inv.geodes)
+	g1 := graph{bps[0], 24}
+	b1 := g1.search()
+	t.Log(b1)
+	a.EqualValues(9, b1.inv[geode])
+
+	g2 := graph{bps[1], 24}
+	b2 := g2.search()
+	t.Log(b2)
+	a.EqualValues(12, b2.inv[geode])
 }
