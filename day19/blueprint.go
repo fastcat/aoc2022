@@ -19,10 +19,6 @@ const (
 
 type cost [3]uint8
 
-func (c cost) canBuild(i inventory) bool {
-	return i[ore] >= c[ore] && i[clay] >= c[clay] && i[obsidian] >= c[obsidian]
-}
-
 type blueprint [4]cost
 
 func parseOne(in string) (int, *blueprint) {

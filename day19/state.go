@@ -18,20 +18,6 @@ func (i *inventory) addMul(i2 inventory, x uint8) {
 	i[obsidian] += i2[obsidian] * x
 	i[geode] += i2[geode] * x
 }
-func (i inventory) u32() uint32 {
-	return uint32(i[ore])<<(8*ore) |
-		uint32(i[clay])<<(8*clay) |
-		uint32(i[obsidian])<<(8*obsidian) |
-		uint32(i[geode])<<(8*geode)
-}
-func invFromU32(v uint32) inventory {
-	return inventory{
-		ore:      byte(v >> (ore * 8) & math.MaxUint8),
-		clay:     byte(v >> (clay * 8) & math.MaxUint8),
-		obsidian: byte(v >> (obsidian * 8) & math.MaxUint8),
-		geode:    byte(v >> (geode * 8) & math.MaxUint8),
-	}
-}
 
 type state struct {
 	inv, bots inventory
@@ -62,18 +48,6 @@ func (s state) timeToBuild(bot cost) int {
 	return max
 }
 
-func (s state) play(b *blueprint, bot idx) state {
-	s2 := s
-	// factory
-	if bot != none {
-		s2.bots[bot]++
-		s2.inv.sub(b[bot])
-	}
-	// accumulate, uses bot count pre-factory
-	s2.inv.addMul(s.bots, 1)
-	return s2
-}
-
 func (s state) wait(turns uint8) state {
 	s.inv.addMul(s.bots, turns)
 	return s
@@ -86,28 +60,8 @@ func (s state) waitAndBuild(turns uint8, b *blueprint, bot idx) state {
 	return s
 }
 
-func (s state) u64() uint64 {
-	return (uint64(s.inv.u32()) << 32) | uint64(s.bots.u32())
-}
-
-func stateFromU64(v uint64) state {
-	return state{
-		inv:  invFromU32(uint32(v >> 32 & math.MaxUint32)),
-		bots: invFromU32(uint32(v & math.MaxUint32)),
-	}
-}
-
 func initialState() state {
 	return state{
 		bots: inventory{ore: 1},
 	}
-}
-
-func (s state) playSimple(b *blueprint) state {
-	for bot := geode; bot >= 0; bot-- {
-		if b[bot].canBuild(s.inv) {
-			return s.play(b, bot)
-		}
-	}
-	return s.play(b, none)
 }

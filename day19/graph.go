@@ -9,12 +9,8 @@ import (
 type graph struct {
 	b         *blueprint
 	runtime   int
-	best      map[graphState]uint8
+	best      []map[state]uint8
 	cacheHits uint64
-}
-type graphState struct {
-	state
-	min int
 }
 
 func (b *blueprint) newGraph(runtime int) *graph {
@@ -26,7 +22,10 @@ func (b *blueprint) newGraph(runtime int) *graph {
 
 func (g *graph) search() uint8 {
 	s := initialState()
-	g.best = make(map[graphState]uint8)
+	g.best = make([]map[state]uint8, g.runtime)
+	for i := range g.best {
+		g.best[i] = make(map[state]uint8)
+	}
 	best := g.walk(0, s, 0)
 	return best
 }
@@ -35,16 +34,13 @@ func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 	if min >= g.runtime {
 		return s.inv[geode]
 	}
-	gs := graphState{s, min}
-	if b, ok := g.best[gs]; ok {
+	// su := s.u64()
+	if b, ok := g.best[min][s]; ok {
 		g.cacheHits++
 		return b
 	}
-	// at least we can wait and just accumulate
-	best := s.wait(uint8(g.runtime - min)).inv[geode]
-	if best > curBest {
-		curBest = best
-	}
+	var best uint8
+	anyBot := false
 	// walk the better paths first so we can prune more aggressively
 	for bot := geode; bot >= ore; bot-- {
 		// need time to save up and then one more to build the bot
@@ -54,6 +50,7 @@ func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 			// no time left to build this bot
 			continue
 		}
+		anyBot = true
 		sb := s.waitAndBuild(uint8(ttb), g.b, bot)
 		tl := g.runtime - nm
 		if tl < len(triangle) {
@@ -71,7 +68,14 @@ func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 			}
 		}
 	}
-	g.best[gs] = best
+	if !anyBot {
+		// at least we can accumulate until the end
+		sb := s.wait(uint8(g.runtime - min)).inv[geode]
+		if sb > best {
+			best = sb
+		}
+	}
+	g.best[min][s] = best
 	return best
 }
 
