@@ -2,7 +2,6 @@ package day19
 
 import (
 	_ "embed"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,7 @@ func TestPart1Sample(t *testing.T) {
 		},
 	})
 
-	best := searchMany(bps)
+	best := searchMany(bps, 24)
 
 	a.EqualValues([]uint8{9, 12}, best)
 
@@ -43,18 +42,7 @@ var input string
 
 func TestPart1(t *testing.T) {
 	bps := parseMany(input)
-	best := make([]uint8, len(bps))
-	wg := sync.WaitGroup{}
-	wg.Add(len(bps))
-	fb := func(i int, b *blueprint) {
-		defer wg.Done()
-		g := graph{b, 24}
-		best[i] = g.search()
-	}
-	for i, b := range bps {
-		go fb(i, b)
-	}
-	wg.Wait()
+	best := searchMany(bps, 24)
 	qs := qualitySum(best)
 	t.Log(qs)
 }

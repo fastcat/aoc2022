@@ -48,4 +48,18 @@ func SumI[T Addable](in Iterator[T]) T {
 	})
 }
 
+func Product[T Multable](in Iterable[T]) T {
+	return Reduce(in, T(1), func(product, value T, i int) T {
+		return product * value
+	})
+}
+func ProductI[T Multable](in Iterator[T]) T {
+	return ReduceI(in, T(1), func(product, value T, i int) T {
+		return product * value
+	})
+}
+
 type Addable = u.Addable
+type Multable interface {
+	constraints.Integer | constraints.Float | constraints.Complex
+}

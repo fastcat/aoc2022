@@ -7,18 +7,38 @@ import (
 )
 
 type graph struct {
-	b       *blueprint
-	runtime int
+	b         *blueprint
+	runtime   int
+	best      map[graphState]uint8
+	cacheHits uint64
+}
+type graphState struct {
+	state
+	min int
+}
+
+func (b *blueprint) newGraph(runtime int) *graph {
+	return &graph{
+		b:       b,
+		runtime: runtime,
+	}
 }
 
 func (g *graph) search() uint8 {
 	s := initialState()
-	return g.walk(0, s, 0)
+	g.best = make(map[graphState]uint8)
+	best := g.walk(0, s, 0)
+	return best
 }
 
 func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 	if min >= g.runtime {
 		return s.inv[geode]
+	}
+	gs := graphState{s, min}
+	if b, ok := g.best[gs]; ok {
+		g.cacheHits++
+		return b
 	}
 	// at least we can wait and just accumulate
 	best := s.wait(uint8(g.runtime - min)).inv[geode]
@@ -38,7 +58,7 @@ func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 		tl := g.runtime - nm
 		if tl < len(triangle) {
 			maxG := int(sb.inv[geode]) + int(sb.bots[geode])*tl + triangle[tl]
-			if maxG < int(best) {
+			if maxG < int(curBest) {
 				// no way this can improve on the best
 				continue
 			}
@@ -51,6 +71,7 @@ func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 			}
 		}
 	}
+	g.best[gs] = best
 	return best
 }
 
@@ -62,14 +83,17 @@ func qualitySum(best []uint8) int {
 		return quality(i+1, b)
 	}))
 }
+func qualityProduct(best []uint8) uint64 {
+	return i.Product(i.Map(i.Slice(best), func(b uint8, _ int) uint64 { return uint64(b) }))
+}
 
-func searchMany(bps []*blueprint) []uint8 {
+func searchMany(bps []*blueprint, runtime int) []uint8 {
 	best := make([]uint8, len(bps))
 	wg := sync.WaitGroup{}
 	wg.Add(len(bps))
 	fb := func(i int, b *blueprint) {
 		defer wg.Done()
-		g := graph{b, 24}
+		g := b.newGraph(runtime)
 		best[i] = g.search()
 	}
 	for i, b := range bps {
@@ -80,5 +104,8 @@ func searchMany(bps []*blueprint) []uint8 {
 }
 
 var triangle = [...]int{
-	0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120, 136, 153, 171, 190, 210, 231, 253,
+	0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120, 136, 153, 171,
+	190, 210, 231, 253, 276, 300, 325, 351, 378, 406, 435, 465, 496, 528, 561,
+	595, 630, 666, 703, 741, 780, 820, 861, 903, 946, 990, 1035, 1081, 1128,
+	1176, 1225, 1275, 1326, 1378, 1431,
 }
