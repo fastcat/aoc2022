@@ -1,22 +1,28 @@
 package day19
 
+import (
+	"sync"
+
+	"github.com/fastcat/aoc2022/i"
+)
+
 type graph struct {
 	b       *blueprint
 	runtime int
 }
 
-func (g *graph) search() state {
+func (g *graph) search() uint8 {
 	s := initialState()
-	return g.walk(0, s, s, make([]idx, 0, g.runtime))
+	return g.walk(0, s, 0)
 }
 
-func (g *graph) walk(min int, s, curBest state, path []idx) state {
+func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 	if min >= g.runtime {
-		return s
+		return s.inv[geode]
 	}
 	// at least we can wait and just accumulate
-	best := s.wait(uint8(g.runtime - min))
-	if best.inv[geode] > curBest.inv[geode] {
+	best := s.wait(uint8(g.runtime - min)).inv[geode]
+	if best > curBest {
 		curBest = best
 	}
 	// walk the better paths first so we can prune more aggressively
@@ -32,19 +38,44 @@ func (g *graph) walk(min int, s, curBest state, path []idx) state {
 		tl := g.runtime - nm
 		if tl < len(triangle) {
 			maxG := int(sb.inv[geode]) + int(sb.bots[geode])*tl + triangle[tl]
-			if maxG < int(best.inv[geode]) {
+			if maxG < int(best) {
 				// no way this can improve on the best
 				continue
 			}
 		}
-		sbw := g.walk(nm, sb, curBest, append(path, bot))
-		if sbw.inv[geode] > best.inv[geode] {
+		sbw := g.walk(nm, sb, curBest)
+		if sbw > best {
 			best = sbw
-			if best.inv[geode] > curBest.inv[geode] {
+			if best > curBest {
 				curBest = best
 			}
 		}
 	}
+	return best
+}
+
+func quality(n int, best uint8) int {
+	return n * int(best)
+}
+func qualitySum(best []uint8) int {
+	return i.Sum(i.Map(i.Slice(best), func(b uint8, i int) int {
+		return quality(i+1, b)
+	}))
+}
+
+func searchMany(bps []*blueprint) []uint8 {
+	best := make([]uint8, len(bps))
+	wg := sync.WaitGroup{}
+	wg.Add(len(bps))
+	fb := func(i int, b *blueprint) {
+		defer wg.Done()
+		g := graph{b, 24}
+		best[i] = g.search()
+	}
+	for i, b := range bps {
+		go fb(i, b)
+	}
+	wg.Wait()
 	return best
 }
 

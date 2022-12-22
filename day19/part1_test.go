@@ -2,6 +2,7 @@ package day19
 
 import (
 	_ "embed"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,13 +30,31 @@ func TestPart1Sample(t *testing.T) {
 		},
 	})
 
-	g1 := graph{bps[0], 24}
-	b1 := g1.search()
-	t.Log(b1)
-	a.EqualValues(9, b1.inv[geode])
+	best := searchMany(bps)
 
-	g2 := graph{bps[1], 24}
-	b2 := g2.search()
-	t.Log(b2)
-	a.EqualValues(12, b2.inv[geode])
+	a.EqualValues([]uint8{9, 12}, best)
+
+	qs := qualitySum(best)
+	a.EqualValues(33, qs)
+}
+
+//go:embed input.txt
+var input string
+
+func TestPart1(t *testing.T) {
+	bps := parseMany(input)
+	best := make([]uint8, len(bps))
+	wg := sync.WaitGroup{}
+	wg.Add(len(bps))
+	fb := func(i int, b *blueprint) {
+		defer wg.Done()
+		g := graph{b, 24}
+		best[i] = g.search()
+	}
+	for i, b := range bps {
+		go fb(i, b)
+	}
+	wg.Wait()
+	qs := qualitySum(best)
+	t.Log(qs)
 }
