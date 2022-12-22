@@ -4,12 +4,14 @@ import (
 	"sync"
 
 	"github.com/fastcat/aoc2022/i"
+	"github.com/fastcat/aoc2022/u"
 )
 
 type graph struct {
 	b         *blueprint
 	runtime   int
 	best      []map[state]uint8
+	skip      [clay + 1]uint8
 	cacheHits uint64
 }
 
@@ -26,11 +28,26 @@ func (g *graph) search() uint8 {
 	for i := range g.best {
 		g.best[i] = make(map[state]uint8)
 	}
-	best := g.walk(0, s, 0)
+	// skip building clay bots when we have enough to build an obsidian every turn
+	g.skip[clay] = g.b[obsidian][clay]
+	// skip building ore bots when we have enough to build any other bot every turn
+	g.skip[ore] = u.Max(
+		g.b[clay][ore],
+		g.b[obsidian][ore],
+		g.b[geode][ore],
+	)
+
+	best := g.walk(
+		0, s, 0,
+		make([]idx, 0, g.runtime),
+	)
 	return best
 }
 
-func (g *graph) walk(min int, s state, curBest uint8) uint8 {
+func (g *graph) walk(
+	min int, s state, curBest uint8,
+	path []idx,
+) uint8 {
 	if min >= g.runtime {
 		return s.inv[geode]
 	}
@@ -39,10 +56,24 @@ func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 		g.cacheHits++
 		return b
 	}
-	var best uint8
-	anyBot := false
+
+	// at least we can accumulate until the end
+	best := s.wait(uint8(g.runtime - min)).inv[geode]
+	if best > curBest {
+		curBest = best
+	}
+
+	minBot := ore
+	if g.b[geode].canBuild(s.bots) {
+		// if we can build a geode every turn, no reason to do anything else
+		minBot = geode
+	}
 	// walk the better paths first so we can prune more aggressively
-	for bot := geode; bot >= ore; bot-- {
+	for bot := geode; bot >= minBot; bot-- {
+		// skip building useless bots
+		if bot <= clay && s.bots[bot] >= g.skip[bot] {
+			continue
+		}
 		// need time to save up and then one more to build the bot
 		ttb := s.timeToBuild(g.b[bot]) + 1
 		nm := min + ttb
@@ -50,7 +81,6 @@ func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 			// no time left to build this bot
 			continue
 		}
-		anyBot = true
 		sb := s.waitAndBuild(uint8(ttb), g.b, bot)
 		tl := g.runtime - nm
 		if tl < len(triangle) {
@@ -60,19 +90,15 @@ func (g *graph) walk(min int, s state, curBest uint8) uint8 {
 				continue
 			}
 		}
-		sbw := g.walk(nm, sb, curBest)
+		sbw := g.walk(
+			nm, sb, curBest,
+			append(path, bot),
+		)
 		if sbw > best {
 			best = sbw
 			if best > curBest {
 				curBest = best
 			}
-		}
-	}
-	if !anyBot {
-		// at least we can accumulate until the end
-		sb := s.wait(uint8(g.runtime - min)).inv[geode]
-		if sb > best {
-			best = sb
 		}
 	}
 	g.best[min][s] = best

@@ -12,6 +12,7 @@ func TestPart2Sample(t *testing.T) {
 	best := searchMany(bps, 32)
 	a.EqualValues([]uint8{56, 62}, best)
 }
+
 func TestPart2(t *testing.T) {
 	bps := parseMany(input)[:3]
 	best := searchMany(bps, 32)
