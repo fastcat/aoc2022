@@ -11,5 +11,5 @@
     "-args",
     "-test.v"
   ],
-  "go.testTimeout": "5s",
+  "go.testTimeout": "10s",
 }
