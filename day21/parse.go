@@ -37,15 +37,12 @@ func parseOne(in string) *node {
 		}
 		n.resolved = true
 	} else {
-		var op rune
-		if _, err := fmt.Sscanf(in[6:], "%4s %c %4s\n", &n.childNames[0], &op, &n.childNames[1]); err != nil {
+		if _, err := fmt.Sscanf(in[6:], "%4s %c %4s\n", &n.childNames[0], &n.opName, &n.childNames[1]); err != nil {
 			panic(err)
 		}
-		opf := ops[op]
-		if opf == nil {
-			panic(fmt.Errorf("invalid op '%c'", op))
+		if n.op = ops[n.opName]; n.op == nil {
+			panic(fmt.Errorf("invalid op '%c'", n.opName))
 		}
-		n.op = opf
 	}
 	return &n
 }
