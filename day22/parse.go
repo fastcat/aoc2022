@@ -21,10 +21,24 @@ func parse(in string) (*board, []move) {
 }
 
 func parseGrid(bstr string) grid {
-	return i.ToSlice(i.Split(
+	grid := i.ToSlice(i.Split(
 		i.Map(i.Runes(bstr), func(r rune, _ int) place { return place(r) }),
 		[]place{'\n'},
 	))
+	// normalize all rows to have the same number of columns, filling the gaps
+	// with void
+	maxCols := i.Max(i.Map(i.Slice(grid), func(r []place, _ int) int { return len(r) }))
+	for r, row := range grid {
+		if len(row) < maxCols {
+			rr := make([]place, maxCols)
+			copy(rr, row)
+			for c := len(row); c < maxCols; c++ {
+				rr[c] = void
+			}
+			grid[r] = rr
+		}
+	}
+	return grid
 }
 
 func parseBoard1(bstr string) *board {
