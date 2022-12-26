@@ -12,7 +12,7 @@ var sample string
 
 func TestPart1Sample(t *testing.T) {
 	a := assert.New(t)
-	b, m := parse(sample)
+	b, m := parse(sample, (*board).buildPortals1)
 	a.Equal(12, len(b.g))
 	a.Equal(
 		[]move{
@@ -44,7 +44,7 @@ func TestPart1Sample(t *testing.T) {
 var input string
 
 func TestPart1(t *testing.T) {
-	b, m := parse(input)
+	b, m := parse(input, (*board).buildPortals1)
 	s := b.initialState()
 	fs := b.moves(s, m...)
 	t.Log(fs, fs.Value())
