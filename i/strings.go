@@ -28,3 +28,7 @@ func ToStrings[T stringable](in Iterable[T]) Iterable[string] {
 type stringable interface {
 	~[]rune | ~[]byte
 }
+
+func Lines(in string) Iterable[string] {
+	return ToStrings(Split(Runes(in), []rune{'\n'}))
+}
